@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <!-- [0] Page Title (e.g., Numele Tau - Portofoliu) -->
+    <title>[0]</title>
+    
+    <!-- Fonts and Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                    colors: {
+                        ue: {
+                            darkest: '#0e1111',
+                            dark: '#121515',
+                            panel: '#1a1d1d',
+                            border: '#2a2d2d',
+                            accent: '#00a2ff',
+                            accentGlow: '#00a2ff80',
+                            textMuted: '#8a9393'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            background-color: #0e1111;
+            color: #e5e7eb;
+            overflow-x: hidden;
+        }
+        
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0e1111;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #2a2d2d;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #00a2ff;
+        }
+
+        .ue-panel {
+            background-color: rgba(26, 29, 29, 0.8);
+            backdrop-filter: blur(10px);
+            border: 1px solid #2a2d2d;
+            transition: all 0.3s ease;
+        }
+        .ue-panel:hover {
+            border-color: #00a2ff;
+            box-shadow: 0 0 15px rgba(0, 162, 255, 0.15);
+        }
+
+        .glow-text {
+            text-shadow: 0 0 10px rgba(0, 162, 255, 0.5);
+        }
+
+        .reveal {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 0.8s cubic-bezier(0.5, 0, 0, 1);
+        }
+        .reveal.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        #blueprint-canvas {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            z-index: -1; pointer-events: none;
+        }
+
+        /* --- EXPERIENCE CARDS HOVER LOGIC --- */
+        .exp-card {
+            position: relative;
+            height: 220px;
+            display: flex;
+            align-items: center;
+            overflow: hidden;
+            background-color: #1a1d1d;
+            border: 1px solid #2a2d2d;
+            border-radius: 0.375rem;
+            transition: all 0.4s ease;
+        }
+        .exp-card:hover {
+            border-color: #00a2ff;
+            box-shadow: 0 0 20px rgba(0, 162, 255, 0.1);
+        }
+        .exp-logo {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            max-width: 120px;
+            max-height: 120px;
+            object-fit: contain;
+            filter: grayscale(80%) opacity(0.7);
+        }
+        .exp-card:hover .exp-logo {
+            left: 30px;
+            transform: translateX(0);
+            filter: grayscale(0%) opacity(1);
+        }
+        .exp-details {
+            opacity: 0;
+            transform: translateX(30px);
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            margin-left: 180px; /* Make room for the logo on the left */
+            padding-right: 30px;
+            pointer-events: none;
+        }
+        .exp-card:hover .exp-details {
+            opacity: 1;
+            transform: translateX(0);
+            pointer-events: auto;
+        }
+
+        /* --- SKILL BADGES HOVER LOGIC --- */
+        .skill-badge {
+            min-height: 140px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        .skill-badge .detail-text {
+            max-height: 0;
+            opacity: 0;
+            overflow: hidden;
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            font-size: 0.875rem;
+            color: #8a9393;
+            margin-top: 0;
+        }
+        .skill-badge:hover .detail-text {
+            max-height: 250px;
+            opacity: 1;
+            margin-top: 1.25rem;
+        }
+        .skill-badge:hover i.icon-main {
+            color: #00a2ff;
+            transform: scale(1.1);
+        }
+
+        /* --- PROJECT CARDS --- */
+        .project-card {
+            position: relative;
+            overflow: hidden;
+        }
+        .project-card:hover .steam-btn {
+            background-color: #00a2ff;
+            color: #0e1111;
+            border-color: #00a2ff;
+        }
+    </style>
+</head>
+<body class="antialiased selection:bg-ue-accent selection:text-ue-darkest">
+
+    <canvas id="blueprint-canvas"></canvas>
+
+    <!-- NAVIGATION -->
+    <nav class="fixed w-full z-50 top-0 transition-all duration-300" id="navbar">
+        <div class="absolute inset-0 bg-ue-darkest/90 backdrop-blur-md border-b border-ue-border shadow-lg"></div>
+        <div class="max-w-7xl mx-auto px-6 py-4 relative flex justify-between items-center">
+            <div class="font-bold text-xl tracking-wider text-white">
+                <span class="text-ue-accent font-mono">&gt;</span> 
+                <!-- [1] Logo Text (e.g., CHIVU_R) -->
+                [1]
+            </div>
+            <div class="hidden md:flex space-x-8 text-sm font-semibold tracking-wide">
+                <a href="#about" class="text-gray-400 hover:text-ue-accent transition-colors">
+                    <!-- [2] Nav Link 1 (e.g., DESPRE MINE) -->
+                    [2]
+                </a>
+                <a href="#experience" class="text-gray-400 hover:text-ue-accent transition-colors">
+                    <!-- [3] Nav Link 2 (e.g., EXPERIENTA) -->
+                    [3]
+                </a>
+                <a href="#skills" class="text-gray-400 hover:text-ue-accent transition-colors">
+                    <!-- [4] Nav Link 3 (e.g., CAPABILITATI) -->
+                    [4]
+                </a>
+                <a href="#games" class="text-gray-400 hover:text-ue-accent transition-colors">
+                    <!-- [5] Nav Link 4 (e.g., JOCURI) -->
+                    [5]
+                </a>
+                <a href="#contact" class="text-gray-400 hover:text-ue-accent transition-colors">
+                    <!-- [6] Nav Link 5 (e.g., CONTACT) -->
+                    [6]
+                </a>
+            </div>
+            <a href="#games" class="hidden md:inline-block border border-ue-accent text-ue-accent px-4 py-2 text-sm font-bold hover:bg-ue-accent hover:text-ue-darkest transition-all rounded-sm">
+                <!-- [7] CTA Button in Nav (e.g., Vezi Jocurile) -->
+                [7]
+            </a>
+        </div>
+    </nav>
+
+    <!-- HERO SECTION -->
+    <header class="min-h-screen flex items-center justify-center relative pt-20 px-6">
+        <div class="max-w-4xl w-full text-center sm:text-left flex flex-col items-center sm:items-start z-10">
+            <p class="text-ue-accent font-mono text-sm sm:text-base mb-4 reveal">
+                <!-- [8] Hero Subtitle (e.g., System.Init() // Welcome) -->
+                [8]
+            </p>
+            <h1 class="text-5xl sm:text-7xl font-extrabold text-white mb-2 tracking-tight reveal" style="transition-delay: 100ms;">
+                <!-- [9] First Name -->
+                [9] 
+                <span class="text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-500">
+                    <!-- [10] Last Name -->
+                    [10]
+                </span>
+            </h1>
+            <h2 class="text-2xl sm:text-4xl font-light text-gray-400 mb-8 glow-text reveal" style="transition-delay: 200ms;">
+                <!-- [11] Role (e.g., Game Programmer) -->
+                [11]
+            </h2>
+            
+            <div class="flex flex-col sm:flex-row items-center gap-6 mb-12 reveal" style="transition-delay: 300ms;">
+                <div class="ue-panel px-6 py-4 rounded-md text-center sm:text-left flex-1 min-w-[200px]">
+                    <div class="text-3xl font-black text-ue-accent mb-1">
+                        <!-- [12] Years of Experience Number (e.g., 7 ANI) -->
+                        [12]
+                    </div>
+                    <div class="text-xs text-ue-textMuted uppercase tracking-widest font-semibold">
+                        <!-- [13] Years of Experience Label (e.g., Experienta Totala) -->
+                        [13]
+                    </div>
+                </div>
+                <div class="flex flex-row gap-4 flex-1">
+                    <div class="ue-panel px-4 py-3 rounded-md text-center w-full">
+                        <div class="text-xl font-bold text-white">
+                            <!-- [14] Unity Experience Number (e.g., 2) -->
+                            [14]
+                        </div>
+                        <div class="text-[10px] text-gray-500 uppercase mt-1">
+                            <!-- [15] Unity Experience Label (e.g., Unity) -->
+                            [15]
+                        </div>
+                    </div>
+                    <div class="ue-panel px-4 py-3 rounded-md text-center w-full relative overflow-hidden group">
+                        <div class="absolute inset-0 bg-ue-accent/10 translate-y-full group-hover:translate-y-0 transition-transform"></div>
+                        <div class="text-xl font-bold text-white relative z-10 flex items-center justify-center">
+                            <!-- [16] Unreal Experience Number (e.g., 5) -->
+                            [16]
+                        </div>
+                        <div class="text-[10px] text-gray-500 uppercase mt-1 relative z-10">
+                            <!-- [17] Unreal Experience Label (e.g., Unreal Engine) -->
+                            [17]
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <a href="#about" class="reveal inline-flex items-center gap-3 bg-white text-ue-darkest px-8 py-4 font-bold rounded-sm hover:bg-ue-accent transition-colors group" style="transition-delay: 400ms;">
+                <span>
+                    <!-- [18] Hero Button Text (e.g., Afla mai multe) -->
+                    [18]
+                </span>
+                <i class="fa-solid fa-arrow-down group-hover:translate-y-1 transition-transform"></i>
+            </a>
+        </div>
+    </header>
+
+    <!-- ABOUT SECTION -->
+    <section id="about" class="py-24 bg-ue-darkest border-t border-ue-border relative">
+        <div class="max-w-6xl mx-auto px-6">
+            <div class="flex items-center gap-4 mb-12 reveal">
+                <div class="w-12 h-[2px] bg-ue-accent"></div>
+                <h2 class="text-3xl font-bold text-white tracking-wide">
+                    <!-- [19] About Section Title (e.g., DESPRE MINE) -->
+                    [19]
+                </h2>
+                <div class="flex-1 h-[1px] bg-ue-border ml-4"></div>
+            </div>
+            <div class="ue-panel p-8 md:p-12 rounded-md reveal relative overflow-hidden">
+                <div class="absolute -right-20 -top-20 w-64 h-64 bg-ue-accent/5 rounded-full blur-3xl pointer-events-none"></div>
+                <div class="absolute -left-20 -bottom-20 w-64 h-64 bg-ue-accent/5 rounded-full blur-3xl pointer-events-none"></div>
+                
+                <p class="text-gray-300 leading-relaxed text-lg md:text-xl font-light relative z-10">
+                    <!-- [20] About Description Paragraph -->
+                    [20]
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- EXPERIENCE SECTION -->
+    <section id="experience" class="py-24 relative bg-ue-darkest">
+        <div class="max-w-6xl mx-auto px-6">
+            <div class="flex items-center gap-4 mb-12 reveal">
+                <div class="w-12 h-[2px] bg-ue-accent"></div>
+                <h2 class="text-3xl font-bold text-white tracking-wide">
+                    <!-- [21] Experience Section Title (e.g., EXPERIENTA) -->
+                    [21]
+                </h2>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 relative">
+                
+                <!-- Unreal Card -->
+                <div class="exp-card reveal">
+                    <img src="assets/unreal_logo.png" class="exp-logo" alt="Unreal Engine">
+                    <div class="exp-details">
+                        <h3 class="text-xl font-bold text-white mb-2">
+                            <!-- [22] Unreal Exp Title (e.g., Unreal Engine Developer) -->
+                            [22]
+                        </h3>
+                        <p class="text-gray-400 text-sm">
+                            <!-- [23] Unreal Exp Details (e.g., 5 ani experienta, X proiecte, framework, etc.) -->
+                            [23]
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Unity Card -->
+                <div class="exp-card reveal" style="transition-delay: 100ms;">
+                    <img src="assets/unity_logo.png" class="exp-logo" alt="Unity">
+                    <div class="exp-details">
+                        <h3 class="text-xl font-bold text-white mb-2">
+                            <!-- [24] Unity Exp Title (e.g., Unity Developer) -->
+                            [24]
+                        </h3>
+                        <p class="text-gray-400 text-sm">
+                            <!-- [25] Unity Exp Details (e.g., 2 ani experienta, proiecte publicate) -->
+                            [25]
+                        </p>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- CORE CAPABILITIES (SKILLS) -->
+    <section id="skills" class="py-24 bg-ue-darkest border-y border-ue-border relative">
+        <div class="max-w-6xl mx-auto px-6">
+            <div class="flex items-center gap-4 mb-12 reveal">
+                <div class="w-12 h-[2px] bg-ue-accent"></div>
+                <h2 class="text-3xl font-bold text-white tracking-wide">
+                    <!-- [26] Skills Section Title (e.g., CAPABILITATI) -->
+                    [26]
+                </h2>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 reveal">
+                <!-- Skill 1 -->
+                <div class="ue-panel skill-badge p-8 rounded-md text-center cursor-default">
+                    <i class="fa-solid fa-layer-group text-4xl text-gray-400 icon-main mb-4 transition-all"></i>
+                    <h3 class="font-bold text-xl text-white">
+                        <!-- [27] Skill 1 Title -->
+                        [27]
+                    </h3>
+                    <p class="detail-text text-left sm:text-center">
+                        <!-- [28] Skill 1 Description -->
+                        [28]
+                    </p>
+                </div>
+                <!-- Skill 2 -->
+                <div class="ue-panel skill-badge p-8 rounded-md text-center cursor-default">
+                    <i class="fa-solid fa-network-wired text-4xl text-gray-400 icon-main mb-4 transition-all"></i>
+                    <h3 class="font-bold text-xl text-white">
+                        <!-- [29] Skill 2 Title -->
+                        [29]
+                    </h3>
+                    <p class="detail-text text-left sm:text-center">
+                        <!-- [30] Skill 2 Description -->
+                        [30]
+                    </p>
+                </div>
+                <!-- Skill 3 -->
+                <div class="ue-panel skill-badge p-8 rounded-md text-center cursor-default">
+                    <i class="fa-solid fa-microchip text-4xl text-gray-400 icon-main mb-4 transition-all"></i>
+                    <h3 class="font-bold text-xl text-white">
+                        <!-- [31] Skill 3 Title -->
+                        [31]
+                    </h3>
+                    <p class="detail-text text-left sm:text-center">
+                        <!-- [32] Skill 3 Description -->
+                        [32]
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- PORTFOLIO / GAMES -->
+    <section id="games" class="py-32 relative bg-ue-darkest">
+        <div class="max-w-6xl mx-auto px-6">
+            <div class="flex items-center gap-4 mb-16 reveal">
+                <div class="w-12 h-[2px] bg-ue-accent"></div>
+                <h2 class="text-3xl font-bold text-white tracking-wide">
+                    <!-- [33] Games Section Title (e.g., PORTOFOLIU JOCURI) -->
+                    [33]
+                </h2>
+                <div class="flex-1 h-[1px] bg-ue-border ml-4"></div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                
+                <!-- Game 1 -->
+                <div class="ue-panel project-card rounded-md p-1 flex flex-col reveal">
+                    <div class="bg-black w-full h-56 rounded-t-sm relative overflow-hidden group">
+                        <img src="assets/game1.jpg" alt="Game 1" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700">
+                        <div class="absolute inset-0 bg-gradient-to-t from-ue-panel via-transparent to-transparent opacity-100"></div>
+                    </div>
+                    <div class="p-6 flex-1 flex flex-col relative z-10 -mt-2 bg-ue-panel">
+                        <h3 class="text-2xl font-bold text-white mb-2 drop-shadow-md">
+                            <!-- [34] Game 1 Title -->
+                            [34]
+                        </h3>
+                        <p class="text-gray-400 text-sm mb-6 flex-1">
+                            <!-- [35] Game 1 Description -->
+                            [35]
+                        </p>
+                        <a href="#" class="steam-btn border border-gray-600 text-gray-300 py-3 px-4 rounded-sm font-semibold flex items-center justify-center gap-3 transition-all">
+                            <i class="fa-brands fa-steam text-xl"></i>
+                            <!-- [36] Game 1 Button Text (e.g., View on Steam) -->
+                            [36]
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Game 2 -->
+                <div class="ue-panel project-card rounded-md p-1 flex flex-col reveal" style="transition-delay: 100ms;">
+                    <div class="bg-black w-full h-56 rounded-t-sm relative overflow-hidden group">
+                        <img src="assets/game2.jpg" alt="Game 2" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700">
+                        <div class="absolute inset-0 bg-gradient-to-t from-ue-panel via-transparent to-transparent opacity-100"></div>
+                    </div>
+                    <div class="p-6 flex-1 flex flex-col relative z-10 -mt-2 bg-ue-panel">
+                        <h3 class="text-2xl font-bold text-white mb-2 drop-shadow-md">
+                            <!-- [37] Game 2 Title -->
+                            [37]
+                        </h3>
+                        <p class="text-gray-400 text-sm mb-6 flex-1">
+                            <!-- [38] Game 2 Description -->
+                            [38]
+                        </p>
+                        <a href="#" class="steam-btn border border-gray-600 text-gray-300 py-3 px-4 rounded-sm font-semibold flex items-center justify-center gap-3 transition-all">
+                            <i class="fa-brands fa-steam text-xl"></i>
+                            <!-- [39] Game 2 Button Text -->
+                            [39]
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Game 3 -->
+                <div class="ue-panel project-card rounded-md p-1 flex flex-col reveal">
+                    <div class="bg-black w-full h-56 rounded-t-sm relative overflow-hidden group">
+                        <img src="assets/game3.jpg" alt="Game 3" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700">
+                        <div class="absolute inset-0 bg-gradient-to-t from-ue-panel via-transparent to-transparent opacity-100"></div>
+                    </div>
+                    <div class="p-6 flex-1 flex flex-col relative z-10 -mt-2 bg-ue-panel">
+                        <h3 class="text-2xl font-bold text-white mb-2 drop-shadow-md">
+                            <!-- [40] Game 3 Title -->
+                            [40]
+                        </h3>
+                        <p class="text-gray-400 text-sm mb-6 flex-1">
+                            <!-- [41] Game 3 Description -->
+                            [41]
+                        </p>
+                        <a href="#" class="steam-btn border border-gray-600 text-gray-300 py-3 px-4 rounded-sm font-semibold flex items-center justify-center gap-3 transition-all">
+                            <i class="fa-brands fa-steam text-xl"></i>
+                            <!-- [42] Game 3 Button Text -->
+                            [42]
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Game 4 -->
+                <div class="ue-panel project-card rounded-md p-1 flex flex-col reveal" style="transition-delay: 100ms;">
+                    <div class="bg-black w-full h-56 rounded-t-sm relative overflow-hidden group">
+                        <img src="assets/game4.jpg" alt="Game 4" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700">
+                        <div class="absolute inset-0 bg-gradient-to-t from-ue-panel via-transparent to-transparent opacity-100"></div>
+                    </div>
+                    <div class="p-6 flex-1 flex flex-col relative z-10 -mt-2 bg-ue-panel">
+                        <h3 class="text-2xl font-bold text-white mb-2 drop-shadow-md">
+                            <!-- [43] Game 4 Title -->
+                            [43]
+                        </h3>
+                        <p class="text-gray-400 text-sm mb-6 flex-1">
+                            <!-- [44] Game 4 Description -->
+                            [44]
+                        </p>
+                        <a href="#" class="steam-btn border border-gray-600 text-gray-300 py-3 px-4 rounded-sm font-semibold flex items-center justify-center gap-3 transition-all">
+                            <i class="fa-brands fa-steam text-xl"></i>
+                            <!-- [45] Game 4 Button Text -->
+                            [45]
+                        </a>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- CONTACT -->
+    <section id="contact" class="py-24 bg-ue-darkest border-t border-ue-border relative backdrop-blur-sm">
+        <div class="max-w-4xl mx-auto px-6 text-center">
+            <div class="flex items-center justify-center gap-4 mb-16 reveal">
+                <div class="w-12 h-[2px] bg-ue-accent"></div>
+                <h2 class="text-3xl font-bold text-white tracking-wide">
+                    <!-- [46] Contact Section Title -->
+                    [46]
+                </h2>
+                <div class="w-12 h-[2px] bg-ue-accent"></div>
+            </div>
+
+            <div class="flex flex-col md:flex-row justify-center items-center gap-10 md:gap-20 reveal">
+                <!-- Email Link -->
+                <a href="#" class="group flex flex-col items-center gap-5 hover:-translate-y-2 transition-all duration-300">
+                    <div class="w-20 h-20 rounded-lg bg-ue-panel border border-ue-border flex items-center justify-center group-hover:border-ue-accent group-hover:shadow-[0_0_20px_rgba(0,162,255,0.2)] transition-all duration-300">
+                        <i class="fa-solid fa-envelope text-3xl text-gray-400 group-hover:text-ue-accent transition-colors"></i>
+                    </div>
+                    <div>
+                        <div class="text-xs text-ue-textMuted font-mono mb-1 uppercase tracking-widest">
+                            <!-- [47] Email Label (e.g., Email Address) -->
+                            [47]
+                        </div>
+                        <div class="text-white font-semibold text-lg group-hover:text-ue-accent transition-colors">
+                            <!-- [48] Email Value -->
+                            [48]
+                        </div>
+                    </div>
+                </a>
+
+                <!-- Phone Link -->
+                <a href="#" class="group flex flex-col items-center gap-5 hover:-translate-y-2 transition-all duration-300" style="transition-delay: 100ms;">
+                    <div class="w-20 h-20 rounded-lg bg-ue-panel border border-ue-border flex items-center justify-center group-hover:border-ue-accent group-hover:shadow-[0_0_20px_rgba(0,162,255,0.2)] transition-all duration-300">
+                        <i class="fa-solid fa-phone text-3xl text-gray-400 group-hover:text-ue-accent transition-colors"></i>
+                    </div>
+                    <div>
+                        <div class="text-xs text-ue-textMuted font-mono mb-1 uppercase tracking-widest">
+                            <!-- [49] Phone Label (e.g., Phone Number) -->
+                            [49]
+                        </div>
+                        <div class="text-white font-semibold text-lg group-hover:text-ue-accent transition-colors">
+                            <!-- [50] Phone Value -->
+                            [50]
+                        </div>
+                    </div>
+                </a>
+            </div>
+
+            <!-- Social Links -->
+            <div class="mt-20 pt-10 border-t border-ue-border/50 reveal" style="transition-delay: 200ms;">
+                <h3 class="text-sm text-ue-textMuted font-mono mb-8 uppercase tracking-widest">
+                    <!-- [51] Socials Label (e.g., Social Networks) -->
+                    [51]
+                </h3>
+                <div class="flex justify-center gap-6">
+                    <a href="#" class="w-14 h-14 rounded-md bg-ue-panel border border-ue-border flex items-center justify-center text-gray-400 hover:text-ue-darkest hover:bg-ue-accent hover:border-ue-accent transition-all hover:scale-110 hover:-translate-y-1 shadow-lg">
+                        <i class="fa-brands fa-instagram text-2xl"></i>
+                    </a>
+                    <a href="#" class="w-14 h-14 rounded-md bg-ue-panel border border-ue-border flex items-center justify-center text-gray-400 hover:text-ue-darkest hover:bg-ue-accent hover:border-ue-accent transition-all hover:scale-110 hover:-translate-y-1 shadow-lg">
+                        <i class="fa-brands fa-youtube text-2xl"></i>
+                    </a>
+                    <a href="#" class="w-14 h-14 rounded-md bg-ue-panel border border-ue-border flex items-center justify-center text-gray-400 hover:text-ue-darkest hover:bg-ue-accent hover:border-ue-accent transition-all hover:scale-110 hover:-translate-y-1 shadow-lg">
+                        <i class="fa-brands fa-tiktok text-2xl"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer class="bg-ue-darkest border-t border-ue-border py-12 relative overflow-hidden">
+        <div class="max-w-6xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center relative z-10">
+            <div class="mb-4 md:mb-0 text-gray-400 text-sm">
+                <!-- [52] Footer Left Text -->
+                [52]
+            </div>
+            <div class="text-gray-500 text-sm">
+                <!-- [53] Footer Right Text -->
+                [53]
+            </div>
+        </div>
+    </footer>
+
+    <!-- JS SCRIPTS -->
+    <script>
+        // Navbar blur on scroll
+        const navbar = document.getElementById('navbar');
+        window.addEventListener('scroll', () => {
+            if (window.scrollY > 50) {
+                navbar.classList.add('py-2');
+                navbar.classList.remove('py-4');
+            } else {
+                navbar.classList.add('py-4');
+                navbar.classList.remove('py-2');
+            }
+        });
+
+        // Intersection Observer for scroll animations
+        const revealElements = document.querySelectorAll('.reveal');
+        const revealObserver = new IntersectionObserver((entries, observer) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('active');
+                    observer.unobserve(entry.target);
+                }
+            });
+        }, {
+            root: null,
+            threshold: 0.1,
+            rootMargin: "0px 0px -50px 0px"
+        });
+        revealElements.forEach(el => revealObserver.observe(el));
+
+        // Background Node Canvas Logic
+        const canvas = document.getElementById('blueprint-canvas');
+        const ctx = canvas.getContext('2d');
+        
+        let width, height;
+        let nodes = [];
+        
+        const config = {
+            nodeCount: window.innerWidth < 768 ? 30 : 60,
+            maxDistance: 150,
+            nodeColor: 'rgba(255, 255, 255, 0.05)',
+            lineColor: 'rgba(0, 162, 255, 0.1)' 
+        };
+
+        function resize() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+        }
+
+        window.addEventListener('resize', () => {
+            resize();
+            initNodes();
+        });
+
+        class Node {
+            constructor() {
+                this.x = Math.random() * width;
+                this.y = Math.random() * height;
+                this.vx = (Math.random() - 0.5) * 0.3;
+                this.vy = (Math.random() - 0.5) * 0.3;
+                this.radius = Math.random() * 1.5 + 1;
+            }
+
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                if (this.x < 0 || this.x > width) this.vx *= -1;
+                if (this.y < 0 || this.y > height) this.vy *= -1;
+            }
+
+            draw() {
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.fillStyle = config.nodeColor;
+                ctx.fill();
+            }
+        }
+
+        function initNodes() {
+            nodes = [];
+            for (let i = 0; i < config.nodeCount; i++) {
+                nodes.push(new Node());
+            }
+        }
+
+        function animate() {
+            ctx.clearRect(0, 0, width, height);
+            
+            for (let i = 0; i < nodes.length; i++) {
+                for (let j = i + 1; j < nodes.length; j++) {
+                    const dx = nodes[i].x - nodes[j].x;
+                    const dy = nodes[i].y - nodes[j].y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+
+                    if (distance < config.maxDistance) {
+                        ctx.beginPath();
+                        ctx.moveTo(nodes[i].x, nodes[i].y);
+                        ctx.lineTo(nodes[j].x, nodes[j].y);
+                        const opacity = 1 - (distance / config.maxDistance);
+                        ctx.strokeStyle = `rgba(0, 162, 255, ${opacity * 0.2})`; 
+                        ctx.lineWidth = 1;
+                        ctx.stroke();
+                    }
+                }
+            }
+
+            nodes.forEach(node => {
+                node.update();
+                node.draw();
+            });
+
+            requestAnimationFrame(animate);
+        }
+
+        resize();
+        initNodes();
+        animate();
+    </script>
+</body>
+</html>
